@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.maps.MapView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/mapview"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:clickable="true"
+    android:apiKey="0SXJ0FelLL38qvmwQQiLJl2rqcOjj0UVkuBrqkg"
+/>
+<!--
+        Windows Vista: C:\Users\<user>\.android\debug.keystore
+        Windows XP: C:\Documents and Settings\<user>\.android\debug.keystore
+        OS X and Linux: ~/.android/debug.keystore
+
+        $ keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -validity 14000
+
+
+        $ keytool -list -alias androiddebugkey  -keystore <path_to_debug_keystore>.keystore  -storepass android -keypass android
+-->
+
+        <!-- MD5:   44:14:58:05:2B:AA:5D:92:5C:43:A9:77:85:85:67:62-->
