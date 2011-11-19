@@ -104,7 +104,7 @@ public class ItemService extends Service {
         }
         if (timer == null) {
             timer = new Timer("Item collector timer");
-            timer.schedule(updateTask, 0L, 2 * 1000L);
+            timer.schedule(updateTask, 0L, 10 * 1000L);
         }
     }
 
