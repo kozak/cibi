@@ -1,5 +1,7 @@
 package com.cibi.item;
 
+import com.cibi.R;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,10 +11,21 @@ import java.util.Set;
  * @author morswin
  */
 public enum ItemType {
-    POLICE,
-    PARKING_SPOT,
-    TRAFFIC_JAM,
-    PHOTO_RADAR;
+    POLICE(R.drawable.placemark_police),
+    PARKING_SPOT(R.drawable.placemark_parking),
+    TRAFFIC_JAM(R.drawable.placemark_jam),
+    PHOTO_RADAR(R.drawable.placemark_radar),
+    ME(R.drawable.navigation);
+
+    ItemType(int icon) {
+        this.icon = icon;
+    }
+
+    int icon;
+
+    public int getIcon() {
+        return icon;
+    }
 
 
     public static ItemType fromOrdinal(int o) {

@@ -3,7 +3,6 @@ package com.cibi.service;
 /**
  * @author morswin
  */
-interface ItemListener {
-
+public interface ItemsChangedListener {
     void onItemsChange();
 }

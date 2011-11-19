@@ -1,32 +1,30 @@
 package com.cibi;
 
+import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.RemoteException;
+import android.os.*;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.ZoomButtonsController;
+import android.widget.ImageButton;
+import android.widget.Toast;
 import com.cibi.item.GeoItem;
 import com.cibi.item.ItemType;
 import com.cibi.item.SearchResult;
 import com.cibi.overlay.CustomItemizedOverlay;
-import com.cibi.service.ItemApi;
-import com.cibi.service.ItemListener;
+import com.cibi.service.ItemsChangedListener;
 import com.cibi.service.ItemService;
 import com.cibi.utils.LocationUtils;
 import com.cibi.view.ZoomEventsMapView;
 import com.google.android.maps.*;
 
-import java.io.IOException;
 import java.util.*;
 
 public class OverviewActivity extends MapActivity {
@@ -41,6 +39,27 @@ public class OverviewActivity extends MapActivity {
     private Map<ItemType, CustomItemizedOverlay> overlayMap = new HashMap<ItemType, CustomItemizedOverlay>(
             ItemType.values().length);
 
+    boolean mBound = false;
+    private Vibrator mVibrator;
+    private ProgressDialog mProgressDialog;
+
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Intent intent = new Intent(getApplicationContext(), ItemService.class);
+        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Unbind from the service
+        if (mBound) {
+            unbindService(serviceConnection);
+            mBound = false;
+        }
+    }
 
     /**
      * Called when the activity is first created.
@@ -50,19 +69,20 @@ public class OverviewActivity extends MapActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.overview);
         mView = (ZoomEventsMapView) findViewById(R.id.mapview);
-        Drawable mDrawable = this.getResources().getDrawable(R.drawable.androidmarker);
+
         handler = new Handler(); // handler will be bound to the current thread (UI)
-        Intent serviceIntent = new Intent(ItemService.class.getName());
-        // start the service explicitly.
-        // otherwise it will only run while the IPC connection is up.
+
+        Intent serviceIntent = new Intent(getApplicationContext(), ItemService.class);
         getApplicationContext().startService(serviceIntent);
-        if (!getApplicationContext().bindService(serviceIntent, serviceConnection, 0)) {
+        if (!getApplicationContext().bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE)) {
             Log.e(TAG, "bindService failed");
         }
 
         for (ItemType value : ItemType.values()) {
-            overlayMap.put(value, new CustomItemizedOverlay(mDrawable, this));
+            Drawable drawable = this.getResources().getDrawable(value.getIcon());
+            overlayMap.put(value, new CustomItemizedOverlay(drawable, this));
         }
+
 
         mView.setOnPanListener(new ZoomEventsMapView.OnPanAndZoomListener() {
             public void onPan() {
@@ -73,6 +93,7 @@ public class OverviewActivity extends MapActivity {
                 updateSearchParams();
             }
         });
+        mView.getController().setZoom(15);
 
         handleButton(R.id.add_police, ItemType.POLICE);
         handleButton(R.id.add_parking, ItemType.PARKING_SPOT);
@@ -81,9 +102,38 @@ public class OverviewActivity extends MapActivity {
         handleCheckbox(R.id.parking_enabled, ItemType.PARKING_SPOT);
         handleCheckbox(R.id.traffic_enabled, ItemType.TRAFFIC_JAM);
 
+        mVibrator = (Vibrator) this.getSystemService(Context.VIBRATOR_SERVICE);
+
+        mProgressDialog = new ProgressDialog(this);
+        mProgressDialog.setCancelable(false);
+        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        mProgressDialog.setMessage("Łączę z GPS... Mobilki, mobilki jak mnie słychać?");
+
 
         MyLocation myLocation = new MyLocation();
-        myLocation.getLocation(this, locationResult);
+
+        myLocation.getLocation(this, new MyLocation.LocationResult() {
+            public void gotLocation(final Location location) {
+                Log.i(TAG, "Got location " + location);
+                mLastLocation = location;
+                CustomItemizedOverlay overlay = overlayMap.get(ItemType.ME);
+                if (mLastLocation != null) {
+                    overlay.clear();
+                    overlay.addOverlay(new OverlayItem(LocationUtils.toGeoPoint(mLastLocation),
+                            ItemType.ME.toString(),
+                            ItemType.ME.toString()));
+                    mView.postInvalidate();
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            mProgressDialog.hide();
+                        }
+                    });
+                }
+                updateSearchParams();
+            }
+        });
+
+        mProgressDialog.show();
     }
 
     private void handleCheckbox(final int id, final ItemType type) {
@@ -103,29 +153,28 @@ public class OverviewActivity extends MapActivity {
     }
 
     private void handleButton(final int id, final ItemType type) {
-        Button button = (Button) findViewById(id);
+        ImageButton button = (ImageButton) findViewById(id);
+        final Context c = this;
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
                 if (mLastLocation != null) {
                     GeoItem.create(getApplicationContext(),
                             LocationUtils.toGeoPoint(mLastLocation),
                             type);
-
+                    mVibrator.vibrate(50L);
+                    Toast toast = Toast.makeText(c, R.string.toast_thanks, Toast.LENGTH_SHORT);
+                    toast.setGravity(Gravity.TOP, 0, 75);
+                    toast.show();
                 }
             }
         });
     }
 
-    public MyLocation.LocationResult locationResult = new MyLocation.LocationResult() {
-        public void gotLocation(final Location location) {
-            Log.i(TAG, "Got location " + location);
-            mLastLocation = location;
-            updateSearchParams();
-        }
-    };
-
     private void updateSearchParams() {
-        if (mLastLocation != null) {
+        if (mLastLocation != null && mBound) {
+            mView.getController().animateTo(
+                    LocationUtils.toGeoPoint(mLastLocation)
+            );
             try {
                 api.setParams((int) (mLastLocation.getLatitude() * GeoItem.TO_GEOPOINT),
                         (int) (mLastLocation.getLongitude() * GeoItem.TO_GEOPOINT),
@@ -135,9 +184,6 @@ public class OverviewActivity extends MapActivity {
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
-            mView.getController().animateTo(
-                    LocationUtils.toGeoPoint(mLastLocation)
-            );
         }
     }
 
@@ -150,9 +196,9 @@ public class OverviewActivity extends MapActivity {
     private ServiceConnection serviceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
             Log.i(TAG, "Service connection established");
-
             // that's how we get the client side of the IPC connection
-            api = ItemApi.Stub.asInterface(service);
+            api = ((ItemService.LocalBinder) service).getService();
+            mBound = true;
             try {
                 api.addListener(collectorListener);
 //                type=3&lat=50418990&lng=18922120&latSpan=10&lngSpan=10
@@ -166,16 +212,16 @@ public class OverviewActivity extends MapActivity {
 
         public void onServiceDisconnected(ComponentName name) {
             Log.i(TAG, "Service connection closed");
+            mBound = false;
         }
     };
 
-    private ItemApi api;
+    private ItemService api;
 
     private Handler handler;
 
-    private ItemListener.Stub collectorListener = new ItemListener.Stub() {
-
-        public void onItemsChange() throws RemoteException {
+    private ItemsChangedListener collectorListener = new ItemsChangedListener() {
+        public void onItemsChange() {
             updateView();
         }
     };
@@ -183,10 +229,11 @@ public class OverviewActivity extends MapActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
         try {
             api.removeListener(collectorListener);
-            unbindService(serviceConnection);
+            if (mBound) {
+                unbindService(serviceConnection);
+            }
         } catch (Throwable t) {
             // catch any issues, typical for destroy routines
             // even if we failed to destroy something, we need to continue destroying
@@ -211,8 +258,10 @@ public class OverviewActivity extends MapActivity {
                     mView.setBuiltInZoomControls(true);
                     mView.getOverlays().clear();
 
-                    for (CustomItemizedOverlay overlay : overlayMap.values()) {
-                        overlay.clear();
+                    for (Map.Entry<ItemType, CustomItemizedOverlay> entry: overlayMap.entrySet()){
+                        if (!entry.getKey().equals(ItemType.ME)) {
+                            entry.getValue().clear();
+                        }
                     }
 
                     List<GeoItem> items = result.getItems();

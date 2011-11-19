@@ -20,11 +20,11 @@ public class CustomItemizedOverlay extends ItemizedOverlay {
     private Context context;
 
     public CustomItemizedOverlay(Drawable drawable) {
-        super(boundCenterBottom(drawable));
+        super(boundCenter(drawable));
     }
 
     public CustomItemizedOverlay(Drawable drawable, Context context) {
-        super(boundCenterBottom(drawable));
+        super(boundCenter(drawable));
         this.context = context;
     }
 
@@ -34,16 +34,6 @@ public class CustomItemizedOverlay extends ItemizedOverlay {
         populate();
     }
 
-
-    @Override
-    protected boolean onTap(int i) {
-        OverlayItem item = overlays.get(i);
-        AlertDialog.Builder dialog = new AlertDialog.Builder(context);
-        dialog.setTitle(item.getTitle());
-        dialog.setMessage(item.getSnippet());
-        dialog.show();
-        return true;
-    }
 
     @Override
     protected OverlayItem createItem(int i) {

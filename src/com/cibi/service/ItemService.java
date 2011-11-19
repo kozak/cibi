@@ -3,7 +3,10 @@ package com.cibi.service;
 import java.util.*;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -26,12 +29,11 @@ public class ItemService extends Service {
     private final IBinder mBinder = new LocalBinder();
 
     public class LocalBinder extends Binder {
-        ItemService getService() {
+        public ItemService getService() {
             // Return this instance of LocalService so clients can call public methods
             return ItemService.this;
         }
     }
-
 
 
     private TimerTask updateTask = new TimerTask() {
@@ -49,7 +51,7 @@ public class ItemService extends Service {
                     }
 
                     synchronized (listeners) {
-                        for (ItemListener listener : listeners) {
+                        for (ItemsChangedListener listener : listeners) {
                             try {
                                 listener.onItemsChange();
                             } catch (Exception e) {
@@ -68,55 +70,50 @@ public class ItemService extends Service {
 
     private SearchResult latestSearchResult = new SearchResult();
 
-    private final List<ItemListener> listeners = new ArrayList<ItemListener>();
+    private final List<ItemsChangedListener> listeners = new ArrayList<ItemsChangedListener>();
 
-    private class ItemServiceApi extends ItemApi.Stub {
-
-        public SearchResult getLatestSearchResult() throws RemoteException {
-            synchronized (latestSearchResultLock) {
-                return latestSearchResult;
-            }
+    public SearchResult getLatestSearchResult() throws RemoteException {
+        synchronized (latestSearchResultLock) {
+            return latestSearchResult;
         }
-
-        public void addListener(ItemListener listener)
-                throws RemoteException {
-            synchronized (listeners) {
-                listeners.add(listener);
-            }
-        }
-
-        public void removeListener(ItemListener listener)
-                throws RemoteException {
-            synchronized (listeners) {
-                listeners.remove(listener);
-            }
-        }
-
-        public void setParams(int lat, int lng, int latSpan, int lngSpan, String[] types) throws RemoteException {
-            Log.i(TAG, String.format("Setting search params: lat=%d lng= %d latSpan=%d lngSpan=%d types=%s",
-                    lat, lng, latSpan, lngSpan, Arrays.toString(types)));
-            mGeoPoint = new GeoPoint(lat, lng);
-            mLatSpan = latSpan;
-            mLngSpan = lngSpan;
-            mTypes = new ItemType[types.length];
-            for (int i = 0; i < types.length; i++) {
-                mTypes[i] = ItemType.valueOf(types[i]);
-            }
-        }
-
     }
 
-    IBinder apiEndpoint = new ItemServiceApi();
+    public void addListener(ItemsChangedListener listener)
+            throws RemoteException {
+        synchronized (listeners) {
+            listeners.add(listener);
+        }
+    }
+
+    public void removeListener(ItemsChangedListener listener)
+            throws RemoteException {
+        synchronized (listeners) {
+            listeners.remove(listener);
+        }
+    }
+
+    public void setParams(int lat, int lng, int latSpan, int lngSpan, String[] types) throws RemoteException {
+        Log.i(TAG, String.format("Setting search params: lat=%d lng= %d latSpan=%d lngSpan=%d types=%s",
+                lat, lng, latSpan, lngSpan, Arrays.toString(types)));
+        mGeoPoint = new GeoPoint(lat, lng);
+        mLatSpan = latSpan;
+        mLngSpan = lngSpan;
+        mTypes = new ItemType[types.length];
+        for (int i = 0; i < types.length; i++) {
+            mTypes[i] = ItemType.valueOf(types[i]);
+        }
+        if (timer == null) {
+            timer = new Timer("Item collector timer");
+            timer.schedule(updateTask, 0L, 2 * 1000L);
+        }
+    }
+
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.d(TAG, "Trying to bind by intent: " + intent);
-        if (ItemService.class.getName().equals(intent.getAction())) {
-            Log.d(TAG, "Bound by intent " + intent);
-            return apiEndpoint;
-        } else {
-            return null;
-        }
+        Log.d(TAG, "Bound by intent " + intent);
+        return mBinder;
+
     }
 
     @Override
@@ -124,8 +121,7 @@ public class ItemService extends Service {
         super.onCreate();
         Log.i(TAG, "Creating ItemService");
 
-        timer = new Timer("Item collector timer");
-        timer.schedule(updateTask, 1000L, 10 * 1000L);
+
     }
 
 
