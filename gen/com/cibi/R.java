@@ -18,13 +18,21 @@ public final class R {
         public static final int icon=0x7f020004;
     }
     public static final class id {
-        public static final int mapview=0x7f050000;
+        public static final int add_parking=0x7f050002;
+        public static final int add_police=0x7f050000;
+        public static final int add_traffic=0x7f050001;
+        public static final int mapview=0x7f050003;
+        public static final int parking_enabled=0x7f050006;
+        public static final int police_enabled=0x7f050004;
+        public static final int traffic_enabled=0x7f050005;
     }
     public static final class layout {
         public static final int main=0x7f030000;
         public static final int overview=0x7f030001;
     }
     public static final class string {
+        public static final int add_url=0x7f040002;
         public static final int app_name=0x7f040000;
+        public static final int get_url=0x7f040001;
     }
 }

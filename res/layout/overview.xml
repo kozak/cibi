@@ -1,21 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.maps.MapView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/mapview"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:clickable="true"
-    android:apiKey="0SXJ0FelLL38qvmwQQiLJl2rqcOjj0UVkuBrqkg"
-/>
-<!--
-        Windows Vista: C:\Users\<user>\.android\debug.keystore
-        Windows XP: C:\Documents and Settings\<user>\.android\debug.keystore
-        OS X and Linux: ~/.android/debug.keystore
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent">
 
-        $ keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -validity 14000
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:orientation="horizontal"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:layout_weight="0">
+        <Button
+                android:id="@+id/add_police"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Police"
+                android:padding="10dp"/>
+        <Button
+                android:text="Traffic"
+                android:id="@+id/add_traffic"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="10dp"/>
+        <Button
+                android:text="Parking"
+                android:id="@+id/add_parking"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="10dp"/>
+    </LinearLayout>
+    <com.cibi.view.ZoomEventsMapView
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/mapview"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:clickable="true"
+            android:layout_weight="1"
+            android:apiKey="0SXJ0FelLL3-onePyAwzvHUZa8-w6yzIyN92I2Q"
+            />
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:orientation="horizontal"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:layout_weight="0">
+        <CheckBox
+                android:id="@+id/police_enabled"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Police"
+                android:checked="true"/>
+        <CheckBox
+                android:text="Traffic"
+                android:id="@+id/traffic_enabled"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true" />
+        <CheckBox
+                android:text="Parking"
+                android:id="@+id/parking_enabled"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                />
+    </LinearLayout>
 
 
-        $ keytool -list -alias androiddebugkey  -keystore <path_to_debug_keystore>.keystore  -storepass android -keypass android
--->
+</LinearLayout>
+
+
+        <!--
+                Windows Vista: C:\Users\<user>\.android\debug.keystore
+                Windows XP: C:\Documents and Settings\<user>\.android\debug.keystore
+                OS X and Linux: ~/.android/debug.keystore
+
+                $ keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -validity 14000
+
+
+                $ keytool -list -alias androiddebugkey  -keystore <path_to_debug_keystore>.keystore  -storepass android -keypass android
+
+                http://code.google.com/android/maps-api-signup.html
+        -->
+
+        <!--43:A2:CE:27:75:68:5D:80:9D:6C:45:89:35:0A:63:DA-->
 
         <!-- MD5:   44:14:58:05:2B:AA:5D:92:5C:43:A9:77:85:85:67:62-->

@@ -1,16 +1,17 @@
 package com.cibi;
 
-import android.app.Activity;
 import android.app.TabActivity;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.TabHost;
-
 /**
  * @author morswin
  */
 public class MainWidget extends TabActivity {
+
+    private static final String TAG = MainWidget.class.getSimpleName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,5 +46,10 @@ public class MainWidget extends TabActivity {
 //        tabHost.addTab(spec);
 
         tabHost.setCurrentTab(0);
+
+
+
+        Log.i(TAG, "Main activity created");
     }
+
 }

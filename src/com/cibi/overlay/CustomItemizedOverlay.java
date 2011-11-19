@@ -14,22 +14,22 @@ import java.util.List;
 /**
  * @author morswin
  */
-public class PoliceItemizedOverlay extends ItemizedOverlay<PoliceItem> {
+public class CustomItemizedOverlay extends ItemizedOverlay {
 
-    private List<PoliceItem> overlays = new ArrayList<PoliceItem>();
+    private List<OverlayItem> overlays = new ArrayList<OverlayItem>();
     private Context context;
 
-    public PoliceItemizedOverlay(Drawable drawable) {
-        super(drawable);
+    public CustomItemizedOverlay(Drawable drawable) {
+        super(boundCenterBottom(drawable));
     }
 
-    public PoliceItemizedOverlay(Drawable drawable, Context context) {
-        super(drawable);
+    public CustomItemizedOverlay(Drawable drawable, Context context) {
+        super(boundCenterBottom(drawable));
         this.context = context;
     }
 
 
-    public void addOverlay(PoliceItem overlay) {
+    public void addOverlay(OverlayItem overlay) {
         overlays.add(overlay);
         populate();
     }
@@ -46,12 +46,17 @@ public class PoliceItemizedOverlay extends ItemizedOverlay<PoliceItem> {
     }
 
     @Override
-    protected PoliceItem createItem(int i) {
+    protected OverlayItem createItem(int i) {
         return overlays.get(i);
     }
 
     @Override
     public int size() {
         return overlays.size();
+    }
+
+    public void clear(){
+        overlays.clear();
+        populate();
     }
 }

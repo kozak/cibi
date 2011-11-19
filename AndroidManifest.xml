@@ -3,19 +3,19 @@
           package="com.cibi"
           android:versionCode="1"
           android:versionName="1.0">
-    <application android:label="@string/app_name" android:icon="@drawable/icon">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+    <application android:label="@string/app_name" android:icon="@drawable/icon" android:debuggable="true">
 
         <uses-library android:name="com.google.android.maps"/>
-        <uses-permission android:name="android.permission.INTERNET"/>
-        <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-        <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 
         <activity android:name="OverviewActivity" android:theme="@android:style/Theme.NoTitleBar">
             <intent-filter>
-                <intent-filter>
-                    <action android:name="android.intent.action.MAIN"/>
-                    <category android:name="android.intent.category.EMBED"/>
-                </intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.EMBED"/>
             </intent-filter>
         </activity>
 
@@ -29,5 +29,16 @@
 
         <activity android:name=".TestActivity"/>
 
+        <service android:name=".service.ItemService" android:label="itemService" android:process=":remote">
+            <intent-filter>
+                <action android:name="com.cibi.service.ItemService"/>
+            </intent-filter>
+        </service>
+
+        <receiver android:name=".receiver.BootReceiver" android:label="bootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
     </application>
 </manifest> 
