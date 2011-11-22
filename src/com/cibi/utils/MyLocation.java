@@ -1,4 +1,4 @@
-package com.cibi;
+package com.cibi.utils;
 
 import java.util.Timer;
 import java.util.TimerTask;

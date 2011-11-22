@@ -1,4 +1,4 @@
-package com.cibi;
+package com.cibi.activity;
 
 import android.app.ProgressDialog;
 import android.content.ComponentName;
@@ -11,10 +11,10 @@ import android.os.*;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.Toast;
+import com.cibi.R;
 import com.cibi.item.GeoItem;
 import com.cibi.item.ItemType;
 import com.cibi.item.SearchResult;
@@ -108,31 +108,6 @@ public class OverviewActivity extends MapActivity {
         mProgressDialog.setCancelable(false);
         mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         mProgressDialog.setMessage("Łączę z GPS... Mobilki, mobilki jak mnie słychać?");
-
-
-        MyLocation myLocation = new MyLocation();
-
-        myLocation.getLocation(this, new MyLocation.LocationResult() {
-            public void gotLocation(final Location location) {
-                Log.i(TAG, "Got location " + location);
-                mLastLocation = location;
-                CustomItemizedOverlay overlay = overlayMap.get(ItemType.ME);
-                if (mLastLocation != null) {
-                    overlay.clear();
-                    overlay.addOverlay(new OverlayItem(LocationUtils.toGeoPoint(mLastLocation),
-                            ItemType.ME.toString(),
-                            ItemType.ME.toString()));
-                    mView.postInvalidate();
-                    runOnUiThread(new Runnable() {
-                        public void run() {
-                            mProgressDialog.hide();
-                        }
-                    });
-                }
-                updateSearchParams();
-            }
-        });
-
         mProgressDialog.show();
     }
 
@@ -146,7 +121,6 @@ public class OverviewActivity extends MapActivity {
                     enabledOverlays.remove(type);
                 }
                 updateSearchParams();
-                updateView();
             }
         });
 
@@ -206,8 +180,6 @@ public class OverviewActivity extends MapActivity {
             } catch (RemoteException e) {
                 Log.e(TAG, "Failed to add listener", e);
             }
-
-            updateView();
         }
 
         public void onServiceDisconnected(ComponentName name) {
@@ -247,6 +219,9 @@ public class OverviewActivity extends MapActivity {
         // doing this in a Handler allows to call this method safely from any thread
         // see Handler docs for more info
         final Context context = this;
+        if (mProgressDialog.isShowing()) {
+            mProgressDialog.hide();
+        }
         mView.postInvalidate();
 
         handler.post(new Runnable() {
