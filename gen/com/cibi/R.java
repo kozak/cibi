@@ -49,12 +49,14 @@ public final class R {
         public static final int splash=0x7f030002;
     }
     public static final class string {
-        public static final int add_url=0x7f040002;
-        public static final int app_name=0x7f040000;
+        public static final int add_url=0x7f040003;
+        public static final int app_name=0x7f040001;
         /** <string name="get_url">http://192.168.50.125/CibiServer/get</string>
 <string name="add_url">http://192.168.50.125/CibiServer/add</string>
          */
-        public static final int get_url=0x7f040001;
-        public static final int toast_thanks=0x7f040003;
+        public static final int get_url=0x7f040002;
+        public static final int maps_api_key=0x7f040000;
+        public static final int speak_prompt=0x7f040005;
+        public static final int toast_thanks=0x7f040004;
     }
 }

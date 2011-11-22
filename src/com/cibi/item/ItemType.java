@@ -14,8 +14,7 @@ public enum ItemType {
     POLICE(R.drawable.placemark_police),
     PARKING_SPOT(R.drawable.placemark_parking),
     TRAFFIC_JAM(R.drawable.placemark_jam),
-    PHOTO_RADAR(R.drawable.placemark_radar),
-    ME(R.drawable.navigation);
+    PHOTO_RADAR(R.drawable.placemark_radar);
 
     ItemType(int icon) {
         this.icon = icon;

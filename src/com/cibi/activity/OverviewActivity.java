@@ -8,6 +8,8 @@ import android.content.ServiceConnection;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.*;
+import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -21,17 +23,17 @@ import com.cibi.item.SearchResult;
 import com.cibi.overlay.CustomItemizedOverlay;
 import com.cibi.service.ItemsChangedListener;
 import com.cibi.service.ItemService;
+import com.cibi.utils.Communication;
 import com.cibi.utils.LocationUtils;
 import com.cibi.view.ZoomEventsMapView;
 import com.google.android.maps.*;
 
 import java.util.*;
 
-public class OverviewActivity extends MapActivity {
+public class OverviewActivity extends MapActivity implements TextToSpeech.OnInitListener {
     private static final String TAG = OverviewActivity.class.getName();
 
     private ZoomEventsMapView mView;
-    private Location mLastLocation;
 
     private Set<ItemType> enabledOverlays = new HashSet<ItemType>(Arrays.asList(ItemType.values()));
 
@@ -42,6 +44,9 @@ public class OverviewActivity extends MapActivity {
     boolean mBound = false;
     private Vibrator mVibrator;
     private ProgressDialog mProgressDialog;
+    private MyLocationOverlay mMyLocationOverlay;
+    private TextToSpeech mTextToSpeech;
+    private boolean mText2SpeechReady;
 
 
     @Override
@@ -83,6 +88,10 @@ public class OverviewActivity extends MapActivity {
             overlayMap.put(value, new CustomItemizedOverlay(drawable, this));
         }
 
+        mMyLocationOverlay = new MyLocationOverlay(this, mView);
+        mMyLocationOverlay.enableCompass();
+        mMyLocationOverlay.enableMyLocation();
+
 
         mView.setOnPanListener(new ZoomEventsMapView.OnPanAndZoomListener() {
             public void onPan() {
@@ -104,11 +113,16 @@ public class OverviewActivity extends MapActivity {
 
         mVibrator = (Vibrator) this.getSystemService(Context.VIBRATOR_SERVICE);
 
-        mProgressDialog = new ProgressDialog(this);
-        mProgressDialog.setCancelable(false);
-        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        mProgressDialog.setMessage("Łączę z GPS... Mobilki, mobilki jak mnie słychać?");
-        mProgressDialog.show();
+
+        Intent checkIntent = new Intent();
+        checkIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
+        startActivityForResult(checkIntent, Communication.T2S_CHECK_CODE);
+
+//        mProgressDialog = new ProgressDialog(this);
+//        mProgressDialog.setCancelable(false);
+//        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+//        mProgressDialog.setMessage("Łączę z GPS... Mobilki, mobilki jak mnie słychać?");
+//        mProgressDialog.show();
     }
 
     private void handleCheckbox(final int id, final ItemType type) {
@@ -131,10 +145,10 @@ public class OverviewActivity extends MapActivity {
         final Context c = this;
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
-                if (mLastLocation != null) {
-                    GeoItem.create(getApplicationContext(),
-                            LocationUtils.toGeoPoint(mLastLocation),
-                            type);
+                GeoPoint point = api.getLatestGeoPoint();
+                if (point != null) {
+                    GeoItem.create(getApplicationContext(), point, type);
+                    updateSearchParams();
                     mVibrator.vibrate(50L);
                     Toast toast = Toast.makeText(c, R.string.toast_thanks, Toast.LENGTH_SHORT);
                     toast.setGravity(Gravity.TOP, 0, 75);
@@ -144,17 +158,41 @@ public class OverviewActivity extends MapActivity {
         });
     }
 
+    public void onSpeakButtonClick(View target) {
+        Communication.inputVoiceCommand(this);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == Communication.VOICE_RECOGNITION_REQUEST_CODE && resultCode == RESULT_OK) {
+            ArrayList<String> matches = data.getStringArrayListExtra(
+                    RecognizerIntent.EXTRA_RESULTS);
+            Log.i(TAG, matches.toString());
+            if (mText2SpeechReady) {
+                for (String match : matches) {
+                    mTextToSpeech.speak(match, TextToSpeech.QUEUE_ADD, null);
+                }
+            }
+        } else if (requestCode == Communication.T2S_CHECK_CODE) {
+            if (resultCode == TextToSpeech.Engine.CHECK_VOICE_DATA_PASS) {
+                // success, create the TTS instance
+                mTextToSpeech = new TextToSpeech(this, this);
+            } else {
+                // missing data, install it
+                Intent installIntent = new Intent();
+                installIntent.setAction(
+                        TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
+                startActivity(installIntent);
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+
     private void updateSearchParams() {
-        if (mLastLocation != null && mBound) {
-            mView.getController().animateTo(
-                    LocationUtils.toGeoPoint(mLastLocation)
-            );
+        if (mBound) {
             try {
-                api.setParams((int) (mLastLocation.getLatitude() * GeoItem.TO_GEOPOINT),
-                        (int) (mLastLocation.getLongitude() * GeoItem.TO_GEOPOINT),
-                        mView.getLatitudeSpan(),
-                        mView.getLongitudeSpan(),
-                        ItemType.getEnabled(enabledOverlays));
+                api.setParams(mView.getLatitudeSpan(), mView.getLongitudeSpan(), ItemType.getEnabled(enabledOverlays));
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -175,8 +213,6 @@ public class OverviewActivity extends MapActivity {
             mBound = true;
             try {
                 api.addListener(collectorListener);
-//                type=3&lat=50418990&lng=18922120&latSpan=10&lngSpan=10
-                api.setParams(50418990, 18922120, 1000000, 1000000, new String[]{ItemType.PHOTO_RADAR.toString()});
             } catch (RemoteException e) {
                 Log.e(TAG, "Failed to add listener", e);
             }
@@ -231,13 +267,14 @@ public class OverviewActivity extends MapActivity {
                     SearchResult result = api.getLatestSearchResult();
                     //add results
                     mView.setBuiltInZoomControls(true);
-                    mView.getOverlays().clear();
+                    List<Overlay> overlays = mView.getOverlays();
+                    overlays.clear();
+                    overlays.add(mMyLocationOverlay);
 
-                    for (Map.Entry<ItemType, CustomItemizedOverlay> entry: overlayMap.entrySet()){
-                        if (!entry.getKey().equals(ItemType.ME)) {
-                            entry.getValue().clear();
-                        }
+                    for (CustomItemizedOverlay overlay : overlayMap.values()) {
+                        overlay.clear();
                     }
+
 
                     List<GeoItem> items = result.getItems();
 //                    Log.i(TAG, "items: " + items);
@@ -254,14 +291,19 @@ public class OverviewActivity extends MapActivity {
                                 overlay.getKey(),
                                 overlay.getValue().size()));
                         if (overlay.getValue().size() > 0 && enabledOverlays.contains(overlay.getKey())) {
-                            mView.getOverlays().add(overlay.getValue());
+                            overlays.add(overlay.getValue());
                         }
                     }
+                    mView.getController().animateTo(api.getLatestGeoPoint());
 
                 } catch (Throwable t) {
                     Log.e(TAG, "Error while updating the UI with tweets", t);
                 }
             }
         });
+    }
+
+    public void onInit(int i) {
+        mText2SpeechReady = true;
     }
 }

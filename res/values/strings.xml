@@ -6,4 +6,5 @@
     <string name="get_url">http://server.cbmobile.pl/get</string>
     <string name="add_url">http://server.cbmobile.pl/add</string>
     <string name="toast_thanks">Roger that! Dzięki za zgłoszenie!</string>
+    <string name="speak_prompt">Dajesz...</string>
 </resources>

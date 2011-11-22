@@ -46,8 +46,13 @@
             android:layout_height="fill_parent"
             android:clickable="true"
             android:layout_weight="1"
-            android:apiKey="0SXJ0FelLL3-onePyAwzvHUZa8-w6yzIyN92I2Q"
+            android:apiKey="@string/maps_api_key"
             />
+    <Button xmlns:android="http://schemas.android.com/apk/res/android"
+            android:text="Tap to speak"
+            android:onClick="onSpeakButtonClick"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"/>
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                   android:orientation="horizontal"
                   android:layout_width="fill_parent"
