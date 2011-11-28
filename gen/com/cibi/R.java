@@ -13,40 +13,47 @@ public final class R {
     public static final class drawable {
         public static final int androidmarker=0x7f020000;
         public static final int androidpiss=0x7f020001;
-        public static final int ic_overview=0x7f020002;
-        public static final int ic_tab_artists_grey=0x7f020003;
-        public static final int ic_tab_artists_white=0x7f020004;
-        public static final int icon=0x7f020005;
-        public static final int logo_splash=0x7f020006;
-        public static final int mark_jam=0x7f020007;
-        public static final int mark_jam_pressed=0x7f020008;
-        public static final int mark_parking=0x7f020009;
-        public static final int mark_parking_pressed=0x7f02000a;
-        public static final int mark_police=0x7f02000b;
-        public static final int mark_police_pressed=0x7f02000c;
-        public static final int navigation=0x7f02000d;
-        public static final int parking=0x7f02000e;
-        public static final int placemark_jam=0x7f02000f;
-        public static final int placemark_parking=0x7f020010;
-        public static final int placemark_police=0x7f020011;
-        public static final int placemark_radar=0x7f020012;
-        public static final int police=0x7f020013;
-        public static final int traffic=0x7f020014;
+        public static final int connected_notify=0x7f020002;
+        public static final int ic_overview=0x7f020003;
+        public static final int ic_tab_artists_grey=0x7f020004;
+        public static final int ic_tab_artists_white=0x7f020005;
+        public static final int icon=0x7f020006;
+        public static final int logo_splash=0x7f020007;
+        public static final int mark_jam=0x7f020008;
+        public static final int mark_jam_pressed=0x7f020009;
+        public static final int mark_parking=0x7f02000a;
+        public static final int mark_parking_pressed=0x7f02000b;
+        public static final int mark_police=0x7f02000c;
+        public static final int mark_police_pressed=0x7f02000d;
+        public static final int navigation=0x7f02000e;
+        public static final int parking=0x7f02000f;
+        public static final int placemark_jam=0x7f020010;
+        public static final int placemark_parking=0x7f020011;
+        public static final int placemark_police=0x7f020012;
+        public static final int placemark_radar=0x7f020013;
+        public static final int police=0x7f020014;
+        public static final int traffic=0x7f020015;
     }
     public static final class id {
-        public static final int add_parking=0x7f050002;
-        public static final int add_police=0x7f050000;
-        public static final int add_traffic=0x7f050001;
-        public static final int mapview=0x7f050003;
-        public static final int parking_enabled=0x7f050006;
-        public static final int police_enabled=0x7f050004;
-        public static final int splash=0x7f050007;
-        public static final int traffic_enabled=0x7f050005;
+        public static final int add_parking=0x7f050007;
+        public static final int add_police=0x7f050005;
+        public static final int add_traffic=0x7f050006;
+        public static final int mapview=0x7f050008;
+        public static final int msg_text=0x7f050003;
+        public static final int parking_enabled=0x7f05000b;
+        public static final int ping=0x7f050002;
+        public static final int police_enabled=0x7f050009;
+        public static final int send=0x7f050004;
+        public static final int splash=0x7f05000c;
+        public static final int start=0x7f050000;
+        public static final int stop=0x7f050001;
+        public static final int traffic_enabled=0x7f05000a;
     }
     public static final class layout {
-        public static final int main=0x7f030000;
-        public static final int overview=0x7f030001;
-        public static final int splash=0x7f030002;
+        public static final int connection=0x7f030000;
+        public static final int main=0x7f030001;
+        public static final int overview=0x7f030002;
+        public static final int splash=0x7f030003;
     }
     public static final class string {
         public static final int add_url=0x7f040003;
@@ -56,6 +63,9 @@ public final class R {
          */
         public static final int get_url=0x7f040002;
         public static final int maps_api_key=0x7f040000;
+        public static final int menu_connect=0x7f040006;
+        public static final int menu_disconnect=0x7f040007;
+        public static final int menu_ping=0x7f040008;
         public static final int speak_prompt=0x7f040005;
         public static final int toast_thanks=0x7f040004;
     }

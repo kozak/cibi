@@ -12,11 +12,15 @@ import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.Toast;
 import com.cibi.R;
+import com.cibi.connection.CibiConnectionService;
+import com.cibi.connection.ConnectionAction;
 import com.cibi.item.GeoItem;
 import com.cibi.item.ItemType;
 import com.cibi.item.SearchResult;
@@ -28,6 +32,7 @@ import com.cibi.utils.LocationUtils;
 import com.cibi.view.ZoomEventsMapView;
 import com.google.android.maps.*;
 
+import java.io.Serializable;
 import java.util.*;
 
 public class OverviewActivity extends MapActivity implements TextToSpeech.OnInitListener {
@@ -48,12 +53,16 @@ public class OverviewActivity extends MapActivity implements TextToSpeech.OnInit
     private TextToSpeech mTextToSpeech;
     private boolean mText2SpeechReady;
 
+    private Messenger mService;
+    private boolean mIsBound;
+
 
     @Override
     protected void onStart() {
         super.onStart();
         Intent intent = new Intent(getApplicationContext(), ItemService.class);
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+        doBindService();
     }
 
     @Override
@@ -64,6 +73,41 @@ public class OverviewActivity extends MapActivity implements TextToSpeech.OnInit
             unbindService(serviceConnection);
             mBound = false;
         }
+        doUnbindService();
+    }
+
+    private static final int MENU_CONNECT = Menu.FIRST;
+    private static final int MENU_DISCONNECT = Menu.FIRST + 1;
+    private static final int MENU_PING = Menu.FIRST + 2;
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        boolean result = super.onCreateOptionsMenu(menu);
+        menu.add(0, MENU_CONNECT, 0, R.string.menu_connect);
+        menu.add(0, MENU_DISCONNECT, 0, R.string.menu_disconnect);
+        menu.add(0, MENU_PING, 0, R.string.menu_ping);
+        return result;
+    }
+
+    @Override
+    public boolean onMenuItemSelected(int featureId, MenuItem item) {
+        try {
+            switch (item.getItemId()) {
+                case MENU_CONNECT:
+                    sendMessage(ConnectionAction.ACTION_START, null);
+                    return true;
+                case MENU_DISCONNECT:
+                    sendMessage(ConnectionAction.ACTION_STOP, null);
+                    return true;
+                case MENU_PING:
+                    sendMessage(ConnectionAction.ACTION_KEEP_ALIVE, null);
+                    return true;
+            }
+        } catch (RemoteException e) {
+            Log.e(TAG, e.getMessage(), e);
+        }
+        return super.onMenuItemSelected(featureId, item);
     }
 
     /**
@@ -165,12 +209,19 @@ public class OverviewActivity extends MapActivity implements TextToSpeech.OnInit
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == Communication.VOICE_RECOGNITION_REQUEST_CODE && resultCode == RESULT_OK) {
-            ArrayList<String> matches = data.getStringArrayListExtra(
+            final ArrayList<String> matches = data.getStringArrayListExtra(
                     RecognizerIntent.EXTRA_RESULTS);
             Log.i(TAG, matches.toString());
             if (mText2SpeechReady) {
-                for (String match : matches) {
-                    mTextToSpeech.speak(match, TextToSpeech.QUEUE_ADD, null);
+                if (!matches.isEmpty()) {
+                    Map<String, Serializable> msgData = new HashMap<String, Serializable>() {{
+                        put("", matches.get(0));
+                    }};
+                    try {
+                        sendMessage(ConnectionAction.ACTION_MSG, msgData);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "Can't send message " + matches.toString(), e);
+                    }
                 }
             }
         } else if (requestCode == Communication.T2S_CHECK_CODE) {
@@ -242,6 +293,7 @@ public class OverviewActivity extends MapActivity implements TextToSpeech.OnInit
             if (mBound) {
                 unbindService(serviceConnection);
             }
+            doUnbindService();
         } catch (Throwable t) {
             // catch any issues, typical for destroy routines
             // even if we failed to destroy something, we need to continue destroying
@@ -305,5 +357,97 @@ public class OverviewActivity extends MapActivity implements TextToSpeech.OnInit
 
     public void onInit(int i) {
         mText2SpeechReady = true;
+    }
+
+
+    private class IncomingHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case ConnectionAction.MSG:
+                    String message = msg.getData().getString("msg");
+                    System.out.println("Received from service: " + message);
+                    mTextToSpeech.speak(message, TextToSpeech.QUEUE_ADD, null);
+                    break;
+                default:
+                    super.handleMessage(msg);
+            }
+        }
+    }
+
+    /**
+     * Target we publish for clients to send messages to IncomingHandler.
+     */
+    final Messenger mMessenger = new Messenger(new IncomingHandler());
+
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            // This is called when the connection with the service has been
+            // established, giving us the service object we can use to
+            // interact with the service.  We are communicating with our
+            // service through an IDL interface, so get a client-side
+            // representation of that from the raw service object.
+            mService = new Messenger(service);
+
+            // We want to monitor the service for as long as we are
+            // connected to it.
+            try {
+                sendMessage(ConnectionAction.ACTION_ADD_LISTENER, null);
+            } catch (RemoteException e) {
+                // In this case the service has crashed before we could even
+                // do anything with it; we can count on soon being
+                // disconnected (and then reconnected if it can be restarted)
+                // so there is no need to do anything here.
+            }
+
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            // This is called when the connection with the service has been
+            // unexpectedly disconnected -- that is, its process crashed.
+            mService = null;
+        }
+    };
+
+    private void doBindService() {
+        // Establish a connection with the service.  We use an explicit
+        // class name because there is no reason to be able to let other
+        // applications replace our component.
+        bindService(new Intent(getApplicationContext(), CibiConnectionService.class), mConnection, Context.BIND_AUTO_CREATE);
+        mIsBound = true;
+    }
+
+    private void sendMessage(ConnectionAction action, Map<String, Serializable> data) throws RemoteException {
+        Message message = Message.obtain(null, action.toInteger());
+        message.replyTo = mMessenger;
+        if (data != null && !data.isEmpty()) {
+            Bundle bundle = message.getData();
+            for (Map.Entry<String, Serializable> entry : data.entrySet()) {
+                bundle.putSerializable(entry.getKey(), entry.getValue());
+            }
+        }
+        mService.send(message);
+    }
+
+
+    private void doUnbindService() {
+        if (mIsBound) {
+            // If we have received the service, and hence registered with
+            // it, then now is the time to unregister.
+            if (mService != null) {
+                try {
+                    sendMessage(ConnectionAction.ACTION_REMOVE_LISTENER, null);
+                } catch (RemoteException e) {
+                    // There is nothing special we need to do if the service
+                    // has crashed.
+                }
+            }
+
+            // Detach our existing connection.
+            unbindService(mConnection);
+            mIsBound = false;
+        }
     }
 }

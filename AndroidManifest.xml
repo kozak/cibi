@@ -28,7 +28,15 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".activity.TestConnection" android:theme="@android:style/Theme.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.HOME"/>
+            </intent-filter>
+        </activity>
+
         <service android:name=".service.ItemService" android:label="itemService"/>
+        <service android:name=".connection.CibiConnectionService" android:label="connectionService"/>
 
     </application>
 </manifest> 

@@ -7,4 +7,7 @@
     <string name="add_url">http://server.cbmobile.pl/add</string>
     <string name="toast_thanks">Roger that! Dzięki za zgłoszenie!</string>
     <string name="speak_prompt">Dajesz...</string>
+    <string name="menu_connect">Połącz Się </string>
+    <string name="menu_disconnect">Rozłącz się</string>
+    <string name="menu_ping">Ping</string>
 </resources>
